@@ -407,5 +407,64 @@
   <script src="js/config.js"></script>
   <script src="js/api.js"></script>
   <script src="js/app.js"></script>
+
+  <script>
+  // 1. ใส่ URL Google Apps Script Web App ของคุณที่นี่
+  const API_URL = 'ใส่_URL_Web_App_ของคุณตรงนี้';
+
+  // ตัวแปรเก็บสถานะประเภทรายการปัจจุบัน (expense, income, transfer)
+  let currentType = 'expense';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // โหลดข้อมูลเมื่อเปิดหน้าเว็บ
+    fetchData();
+
+    // จัดการปุ่มสลับประเภทรายการ (รายจ่าย / รายรับ / โอนเงิน)
+    const typeButtons = document.querySelectorAll('form button[type="button"]');
+    typeButtons.forEach((btn, index) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        typeButtons.forEach(b => {
+          b.className = "py-2 text-xs font-semibold rounded-lg text-slate-600 hover:bg-white/50";
+        });
+        if (index === 0) {
+          btn.className = "py-2 text-xs font-semibold rounded-lg bg-rose-500 text-white shadow-sm";
+          currentType = 'expense';
+        } else if (index === 1) {
+          btn.className = "py-2 text-xs font-semibold rounded-lg bg-emerald-500 text-white shadow-sm";
+          currentType = 'income';
+        } else {
+          btn.className = "py-2 text-xs font-semibold rounded-lg bg-blue-500 text-white shadow-sm";
+          currentType = 'transfer';
+        }
+      });
+    });
+
+    // จัดการฟอร์มบันทึกธุรกรรม
+    const form = document.querySelector('form');
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        alert('ระบบกำลังบันทึกข้อมูล...');
+        // สามารถเขียนโค้ดส่งข้อมูลไปที่ API_URL ต่อตรงนี้ได้เลย
+      });
+    }
+  });
+
+  // ฟังก์ชันดึงข้อมูลจาก Google Sheets
+  async function fetchData() {
+    if (!API_URL || API_URL.includes('ใส่_URL')) return;
+    try {
+      const response = await fetch(API_URL);
+      const result = await response.json();
+      if (result.success) {
+        console.log('โหลดข้อมูลสำเร็จ:', result.data);
+        // นำข้อมูลไปเรนเดอร์ลงในตารางและยอดเงินสรุปตามต้องการ
+      }
+    } catch (error) {
+      console.error('เกิดข้อผิดพลาดในการดึงข้อมูล:', error);
+    }
+  }
+</script>
 </body>
 </html>
