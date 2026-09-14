@@ -763,3 +763,14 @@
 </script>
 </body>
 </html>
+<script>
+  function switchTab(tabId) {
+    const views = ['dashboard', 'goals', 'details', 'settings'];
+    views.forEach(id => {
+      const section = document.getElementById(id + '-view');
+      if (section) section.classList.add('hidden');
+    });
+    const activeSection = document.getElementById(tabId + '-view');
+    if (activeSection) activeSection.classList.remove('hidden');
+  }
+</script>
