@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ember Money Manager - Smart Cloud Pocket Web Application</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-[#FAFAF9] text-stone-900 font-sans selection:bg-amber-200 selection:text-amber-900">
+
+  <!-- Global Loading Overlay -->
+  <div id="global-loading" class="fixed inset-0 bg-stone-900/40 backdrop-blur-xs z-50 flex items-center justify-center" style="display: none;">
+    <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-xl flex items-center space-x-3">
+      <div class="w-6 h-6 border-3 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
+      <span class="text-sm font-bold text-stone-800">กำลังประมวลผลข้อมูล...</span>
+    </div>
+  </div>
+
+  <!-- App Main Layout -->
+  <div class="min-h-screen flex flex-col md:flex-row">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="w-full md:w-64 bg-[#F5F5F4] border-r border-stone-200 p-6 flex flex-col justify-between space-y-8 shrink-0">
+      <div class="space-y-8">
+        <!-- Logo Header -->
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dashboard')">
+          <div class="w-10 h-10 rounded-2xl bg-[#C2410C] flex items-center justify-center text-white font-bold text-xl shadow-md">
+            🔥
+          </div>
+          <div>
+            <h1 className="font-extrabold text-stone-900 text-lg tracking-tight font-display">
+              Ember Money
+            </h1>
+            <p class="text-[11px] text-stone-500 font-medium uppercase tracking-wider">
+              ระบบจัดสรรเงินอัจฉริยะ
+            </p>
+          </div>
+        </div>
+
+        <!-- Nav Links -->
+        <nav class="space-y-1">
+          <button id="nav-dashboard" onclick="switchTab('dashboard')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl font-bold text-sm bg-[#C2410C] text-white shadow-sm transition">
+            <span>📊</span>
+            <span>หน้าหลัก</span>
+          </button>
+
+          <button id="nav-goals" onclick="switchTab('goals')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl font-bold text-sm text-stone-700 hover:bg-stone-200/70 transition">
+            <span>🎯</span>
+            <span>เป้าหมายการออม</span>
+          </button>
+
+          <button id="nav-goal_detail" onclick="switchTab('goal_detail')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl font-bold text-sm text-stone-700 hover:bg-stone-200/70 transition">
+            <span>🏡</span>
+            <span>รายละเอียดเป้าหมาย</span>
+          </button>
+
+          <button id="nav-settings" onclick="switchTab('settings')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl font-bold text-sm text-stone-700 hover:bg-stone-200/70 transition">
+            <span>⚙️</span>
+            <span>ตั้งค่าระบบ</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- System Connection Badge -->
+      <div id="connection-badge" class="p-3.5 bg-white rounded-2xl border border-stone-200 flex items-center space-x-3 shadow-xs">
+        <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-900 font-bold flex items-center justify-center text-xs">
+          WEB
+        </div>
+        <div class="overflow-hidden">
+          <p class="text-xs font-bold text-stone-900 truncate">เว็บแอปพร้อมใช้งาน</p>
+          <p id="badge-status-text" class="text-[10px] text-stone-500 truncate">บันทึกข้อมูลในเครื่องแล้ว</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Canvas -->
+    <main class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full overflow-y-auto">
+      
+      <!-- VIEW 1: DASHBOARD -->
+      <div id="view-dashboard" class="space-y-8 animate-fadeIn">
+        
+        <!-- Header Bar -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-3xl border border-stone-200 shadow-sm gap-4">
+          <div>
+            <h1 class="text-2xl md:text-3xl font-extrabold text-stone-900 font-display">
+              แดชบอร์ดสรุปการเงิน
+            </h1>
+            <p class="text-stone-500 text-sm mt-1">
+              ระบบจัดสรรเงิน Cloud Pocket และบันทึกวิเคราะห์การเงินส่วนบุคคล
+            </p>
+          </div>
+
+          <!-- Wealth Summary Cards -->
+          <div class="flex flex-wrap gap-3 w-full md:w-auto">
+            <div class="bg-amber-50/80 border border-amber-200 p-4 rounded-2xl flex-1 md:flex-initial min-w-[140px]">
+              <p class="text-xs text-amber-800 font-bold uppercase tracking-wider">สินทรัพย์รวมทั้งหมด</p>
+              <p id="stat-total-balance" class="text-xl md:text-2xl font-black text-amber-950 mt-0.5">฿0</p>
+            </div>
+
+            <div class="bg-emerald-50/80 border border-emerald-200 p-4 rounded-2xl flex-1 md:flex-initial min-w-[140px]">
+              <p class="text-xs text-emerald-800 font-bold uppercase tracking-wider">เป้าหมายรวม</p>
+              <p id="stat-total-target" class="text-xl md:text-2xl font-black text-emerald-950 mt-0.5">฿0</p>
+            </div>
+
+            <div class="bg-stone-100 border border-stone-200 p-4 rounded-2xl flex-1 md:flex-initial min-w-[120px]">
+              <p class="text-xs text-stone-600 font-bold uppercase tracking-wider">อัตราการออม</p>
+              <p id="stat-savings-rate" class="text-xl md:text-2xl font-black text-stone-900 mt-0.5">0%</p>
+            </div>
+          </div>
+        </header>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          <!-- Cloud Pockets Grid (2 Cols) -->
+          <div class="lg:col-span-2 space-y-4">
+            <div class="flex justify-between items-center">
+              <div class="flex items-center space-x-2">
+                <h2 class="text-xl font-bold text-stone-900">กระเป๋าเงินย่อย (Cloud Pockets)</h2>
+                <span id="pocket-count-badge" class="bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 rounded-full font-bold">0 กระเป๋า</span>
+              </div>
+              <button onclick="toggleModal(true)" type="button" class="text-xs font-bold text-amber-900 hover:text-amber-950 bg-amber-100 hover:bg-amber-200 px-3.5 py-2 rounded-xl transition shadow-xs">
+                + เพิ่มกระเป๋า
+              </button>
+            </div>
+
+            <div id="pockets-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Transaction Form (1 Col) -->
+          <div class="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-5 h-fit">
+            <h2 class="text-xl font-bold text-stone-900">⚡ บันทึกรายการใหม่</h2>
+
+            <div id="form-feedback" class="p-3.5 rounded-xl text-sm font-medium border" style="display: none;"></div>
+
+            <form onsubmit="submitTransaction(event)" class="space-y-4">
+              <input type="hidden" id="form-trans-type" value="expense">
+
+              <div>
+                <label class="block text-xs font-semibold text-stone-500 mb-1.5">ประเภทรายการ</label>
+                <div class="grid grid-cols-3 gap-2">
+                  <button id="btn-type-expense" type="button" onclick="setTransType('expense')" class="py-2 text-xs font-bold rounded-xl border bg-red-500 text-white border-red-600 shadow-sm">
+                    รายจ่าย (-)
+                  </button>
+                  <button id="btn-type-income" type="button" onclick="setTransType('income')" class="py-2 text-xs font-bold rounded-xl border bg-stone-50 text-stone-700 border-stone-200">
+                    รายรับ (+)
+                  </button>
+                  <button id="btn-type-transfer" type="button" onclick="setTransType('transfer')" class="py-2 text-xs font-bold rounded-xl border bg-stone-50 text-stone-700 border-stone-200">
+                    โอนเงิน (⇄)
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-stone-500 mb-1.5">เลือกกระเป๋าเงิน</label>
+                <select id="form-source-pocket" class="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium focus:outline-none"></select>
+              </div>
+
+              <div id="form-target-box" style="display: none;">
+                <label class="block text-xs font-semibold text-stone-500 mb-1.5">ไปยังกระเป๋าปลายทาง</label>
+                <select id="form-target-pocket" class="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium focus:outline-none"></select>
+              </div>
+
+              <div id="form-category-box">
+                <label class="block text-xs font-semibold text-stone-500 mb-1.5">หมวดหมู่</label>
+                <select id="form-category" class="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium focus:outline-none">
+                  <option value="อาหาร & เครื่องดื่ม">อาหาร & เครื่องดื่ม</option>
+                  <option value="การเดินทาง">การเดินทาง</option>
+                  <option value="ความบันเทิง & ช้อปปิ้ง">ความบันเทิง & ช้อปปิ้ง</option>
+                  <option value="ค่าใช้จ่ายที่อยู่อาศัย">ค่าใช้จ่ายที่อยู่อาศัย</option>
+                  <option value="เงินเดือน / รายได้เสริม">เงินเดือน / รายได้เสริม</option>
+                  <option value="เงินออม">เงินออม</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-stone-500 mb-1.5">จำนวนเงิน (บาท)</label>
+                <input type="number" id="form-amount" placeholder="0.00" step="0.01" class="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-bold focus:outline-none" required>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-stone-500 mb-1.5">แนบสลิป/ใบเสร็จ (ไม่บังคับ)</label>
+                <input type="file" id="form-receipt-file" accept="image/*" onchange="previewReceiptImage(event)" class="w-full text-xs text-stone-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200">
+                <div id="receipt-preview-box" class="mt-2" style="display: none;">
+                  <img id="receipt-preview-img" class="w-20 h-20 object-cover rounded-xl border border-stone-200 shadow-xs" src="" alt="สลิป">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-stone-500 mb-1.5">บันทึกความจำ (ไม่บังคับ)</label>
+                <input type="text" id="form-note" placeholder="ระบุรายละเอียด..." class="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium focus:outline-none">
+              </div>
+
+              <button type="submit" class="w-full bg-stone-900 hover:bg-stone-800 text-white font-bold py-3.5 rounded-xl shadow-sm transition active:scale-[0.99]">
+                บันทึกธุรกรรม
+              </button>
+            </form>
+          </div>
+
+        </div>
+
+        <!-- Transaction Log Table -->
+        <div class="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-4">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+            <h2 class="text-xl font-bold text-stone-900">📝 ประวัติการทำรายการ</h2>
+            <div class="flex gap-2 w-full md:w-auto">
+              <input type="text" id="tx-search" oninput="renderTransactionTable()" placeholder="ค้นหา..." class="px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium focus:outline-none">
+              <select id="tx-filter-type" onchange="renderTransactionTable()" class="px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium focus:outline-none">
+                <option value="all">ทั้งหมด</option>
+                <option value="income">รายรับ</option>
+                <option value="expense">รายจ่าย</option>
+                <option value="transfer">โอนเงิน</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-stone-200 text-xs font-semibold text-stone-400 uppercase">
+                  <th class="py-3 px-3">วันที่</th>
+                  <th class="py-3 px-3">กระเป๋าเงิน</th>
+                  <th class="py-3 px-3">หมวดหมู่ / โน้ต</th>
+                  <th class="py-3 px-3">สลิป</th>
+                  <th class="py-3 px-3 text-right">จำนวนเงิน</th>
+                </tr>
+              </thead>
+              <tbody id="tx-table-body" class="divide-y divide-stone-100 text-sm">
+                <!-- Dynamically Rendered -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- VIEW 2: SAVINGS GOALS -->
+      <div id="view-goals" class="space-y-8 animate-fadeIn" style="display: none;">
+        <div class="flex justify-between items-center bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
+          <div>
+            <h1 class="text-2xl font-extrabold text-stone-900 font-display">เป้าหมายการออมเงิน</h1>
+            <p class="text-stone-500 text-sm mt-1">จัดสรรเงินและตั้งเป้าหมายชีวิตด้วย Cloud Pocket</p>
+          </div>
+          <button onclick="toggleModal(true)" type="button" class="bg-stone-900 hover:bg-stone-800 text-white font-bold px-5 py-3 rounded-xl shadow-sm text-sm transition">
+            + สร้างเป้าหมายใหม่
+          </button>
+        </div>
+
+        <div id="goals-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Dynamically Rendered -->
+        </div>
+      </div>
+
+      <!-- VIEW 3: GOAL DETAIL -->
+      <div id="view-goal_detail" class="space-y-8 animate-fadeIn" style="display: none;">
+        <div class="flex justify-between items-center bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
+          <div class="flex items-center space-x-4">
+            <button onclick="switchTab('goals')" class="p-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition">
+              ← กลับ
+            </button>
+            <div>
+              <h1 id="detail-name" class="text-2xl font-bold text-stone-900 font-display">เป้าหมายการออม</h1>
+              <p class="text-xs text-stone-500 mt-0.5">รายละเอียดเป้าหมายเงินออมและแผนการฝากเงิน</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm space-y-2">
+            <p class="text-xs text-stone-500 font-bold uppercase">เงินสะสมปัจจุบัน</p>
+            <p id="detail-balance" class="text-3xl font-black text-stone-900">฿0</p>
+          </div>
+          <div class="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm space-y-2">
+            <p class="text-xs text-stone-500 font-bold uppercase">ยังขาดอีก</p>
+            <p id="detail-remaining" class="text-3xl font-black text-amber-900">฿0</p>
+          </div>
+          <div class="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm space-y-2">
+            <p class="text-xs text-stone-500 font-bold uppercase">ระยะเวลาคาดการณ์</p>
+            <p id="detail-months" class="text-3xl font-black text-emerald-700">0 เดือน</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-stone-200 shadow-sm space-y-6">
+            <h2 class="text-lg font-bold text-stone-900">📊 ความคืบหน้าเป้าหมาย</h2>
+            <div class="space-y-2">
+              <div class="flex justify-between text-xs font-semibold">
+                <span>เป้าหมายสะสม</span>
+                <span id="detail-pct" class="font-bold">0% บรรลุแล้ว</span>
+              </div>
+              <div class="w-full bg-stone-100 h-4 rounded-full overflow-hidden border border-stone-200">
+                <div id="detail-bar" class="bg-amber-700 h-full rounded-full transition-all duration-500" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm space-y-4">
+            <h2 class="text-lg font-bold text-stone-900">🧮 คำนวณแผนเงินออม</h2>
+            <div>
+              <label class="block text-xs font-semibold text-stone-600 mb-1">เงินออมต่อเดือน (บาท)</label>
+              <input type="number" value="25000" oninput="updateCalculator(this.value)" class="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-bold focus:outline-none">
+            </div>
+            <div class="p-4 bg-amber-50 rounded-2xl border border-amber-200 text-xs space-y-2">
+              <div class="flex justify-between text-amber-900">
+                <span>ต้องใช้เวลาประมาณ:</span>
+                <span id="detail-years-est" class="font-bold">0 เดือน</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 4: SETTINGS -->
+      <div id="view-settings" class="space-y-8 animate-fadeIn" style="display: none;">
+        <div class="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
+          <h1 class="text-2xl font-extrabold text-stone-900 font-display">ตั้งค่าระบบ (Settings)</h1>
+          <p class="text-stone-500 text-sm mt-1">จัดการข้อมูลสำรอง และการเชื่อมต่อ Google Apps Script Web App</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm space-y-4">
+            <h2 class="text-xl font-bold text-stone-900">💾 จัดการข้อมูลสำรอง (Backup Data)</h2>
+            <p class="text-xs text-stone-500">คุณสามารถส่งออกข้อมูลประวัติธุรกรรมและกระเป๋าเงินเป็นไฟล์ CSV หรือรีเซ็ตข้อมูลเริ่มต้นได้</p>
+            <div class="flex flex-wrap gap-3">
+              <button onclick="exportDataCSV()" type="button" class="bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition">
+                📥 Export CSV
+              </button>
+              <button onclick="resetDataToSeed()" type="button" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold px-4 py-2.5 rounded-xl transition">
+                🔄 รีเซ็ตข้อมูลเริ่มต้น
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm space-y-4">
+            <h2 class="text-xl font-bold text-stone-900">☁️ เชื่อมต่อ Google Apps Script</h2>
+            <div id="settings-gas-status" class="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-xs space-y-2">
+              <p class="font-bold text-stone-800">โหมดปัจจุบัน: Web Local App</p>
+              <p class="text-stone-600">เมื่อคุณทำการ Deploy Google Apps Script (`Code.gs`) เรียบร้อยแล้ว ให้นำ Web App URL มาวางไว้ในไฟล์ <code class="bg-stone-200 px-1 py-0.5 rounded text-amber-800">github_pages/js/config.js</code> เพื่อซิงก์ข้อมูลอัตโนมัติ</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Create Goal Modal -->
+  <div id="create-modal" class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn" style="display: none;">
+    <div class="bg-white p-6 rounded-3xl border border-stone-200 shadow-xl max-w-md w-full space-y-5">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-bold text-stone-900">สร้างเป้าหมายการออมใหม่</h2>
+        <button type="button" onclick="toggleModal(false)" class="text-stone-400 font-bold text-lg">✕</button>
+      </div>
+
+      <form onsubmit="submitCreateGoal(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-stone-600 mb-1">ชื่อเป้าหมาย</label>
+          <input type="text" id="modal-goal-name" placeholder="เช่น รถคันแรก, กองทุนเกษียณ" class="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium focus:outline-none" required>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-stone-600 mb-1">เป้าหมายจำนวนเงิน (บาท)</label>
+          <input type="number" id="modal-goal-target" placeholder="0.00" class="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium focus:outline-none" required>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-stone-600 mb-1">เงินเริ่มต้น</label>
+          <input type="number" id="modal-goal-initial" placeholder="0.00" class="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium focus:outline-none">
+        </div>
+        <div class="flex items-center space-x-2 pt-2">
+          <input type="checkbox" id="modal-goal-lock" class="w-4 h-4 text-amber-600 rounded">
+          <label htmlFor="modal-goal-lock" class="text-xs font-semibold text-stone-700">🔒 ล็อกกระเป๋านี้ไว้</label>
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="toggleModal(false)" class="flex-1 py-3 bg-stone-100 text-stone-700 font-bold rounded-xl text-sm">ยกเลิก</button>
+          <button type="submit" class="flex-1 py-3 bg-stone-900 text-white font-bold rounded-xl text-sm">สร้างเป้าหมาย</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Receipt Viewer Modal -->
+  <div id="receipt-modal" class="fixed inset-0 bg-stone-900/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn" style="display: none;">
+    <div class="bg-white p-5 rounded-3xl border border-stone-200 shadow-2xl max-w-lg w-full space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-stone-900 text-base">🖼️ หลักฐานการทำรายการ/สลิป</h3>
+        <button type="button" onclick="closeReceiptModal()" class="text-stone-400 font-bold text-lg">✕</button>
+      </div>
+      <div class="flex justify-center bg-stone-100 p-2 rounded-2xl overflow-hidden border border-stone-200">
+        <img id="receipt-modal-img" class="max-h-[70vh] rounded-xl object-contain" src="" alt="สลิปใบเสร็จ">
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
